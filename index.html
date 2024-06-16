@@ -3,14 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voucher Status</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Voucher Remaining Time</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrapv4.min.css">
+    <link rel="stylesheet" type="text/css" href="css/cnty.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .container p {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .container input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .container button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
-<body>
-    <h1>Check Your Voucher Remaining Time</h1>
-    <div id="voucher-info"></div>
+<body class="light-blue lighten-1">
+  <div class="container halamanlogin">
+    <h1>Voucher Remaining Time</h1>
+    <div class="container">
+        <form id="voucherForm">
+            <label for="voucherCode">Enter Voucher Code:</label>
+            <input type="text" id="voucherCode" name="voucherCode" required>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="voucher-info"></div>
+    </div>
+  </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="script.js"></script>
+  <script src="js/jquery.js"></script>
+  <script src="js/bootstrapv4.min.js"></script>
+  <script>
+    $(document).ready(function() {
+        $('#voucherForm').on('submit', function(event) {
+            event.preventDefault();
+            
+            const voucherCode = $('#voucherCode').val();
+            const apiEndpoint = 'https://omadavoucherapi.p.rapidapi.com/';
+            
+            $.ajax({
+                url: apiEndpoint,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-RapidAPI-Key': 'b03ddc1be3msh1801a5493740628p1b3f8djsnab25fa9b2f62',
+                    'X-RapidAPI-Host': 'omadavoucherapi.p.rapidapi.com'
+                },
+                data: JSON.stringify({ voucher: voucherCode }),
+                success: function(data) {
+                    const voucher = data.voucher;
+                    if (voucher) {
+                        const voucherInfo = `
+                            <p><strong>Voucher Code:</strong> ${voucher.code}</p>
+                            <p><strong>Remaining Time:</strong> ${voucher.remainingTime}</p>
+                        `;
+                        $('#voucher-info').html(voucherInfo);
+                        startTimer(voucher.remainingTime);
+                    } else {
+                        $('#voucher-info').html('<p>Invalid voucher code. Please try again.</p>');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error fetching voucher data:', error);
+                    $('#voucher-info').html('<p>Error fetching voucher data. Please try again later.</p>');
+                }
+            });
+        });
+    });
+
+    let timerInterval;
+
+    function startTimer(duration) {
+        let timer = duration, minutes, seconds;
+        clearInterval(timerInterval); // Clear any existing timer
+        timerInterval = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            $('#voucher-info').append(`<p>${minutes}:${seconds}</p>`);
+
+            if (--timer < 0) {
+                clearInterval(timerInterval);
+                $('#voucher-info').append(`<p>Voucher expired</p>`);
+            }
+        }, 1000);
+    }
+  </script>
 </body>
 </html>
