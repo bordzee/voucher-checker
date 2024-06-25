@@ -7,11 +7,7 @@
 </head>
 <body>
     <h1>Omada Voucher Login</h1>
-    <form id="voucherForm">
-        <label for="voucher">Voucher Code:</label>
-        <input type="text" id="voucher" name="voucher" required>
-        <button type="submit">Submit</button>
-    </form>
+    <button id="executeButton">Execute Requests</button>
     <div id="message"></div>
     <pre id="debug"></pre>
 
@@ -84,14 +80,13 @@
             return data;
         }
 
-        document.getElementById('voucherForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const voucher = document.getElementById('voucher').value;
+        document.getElementById('executeButton').addEventListener('click', async function() {
+            const voucherCode = prompt("Enter the voucher code:");
             try {
                 const loginResult = await login();
                 const authCode = await getAuthCode(loginResult.csrfToken, loginResult.sessionId);
                 const tokenResult = await getToken(authCode);
-                const voucherData = await getVoucher(tokenResult.accessToken, voucher);
+                const voucherData = await getVoucher(tokenResult.accessToken, voucherCode);
                 document.getElementById('message').textContent = JSON.stringify(voucherData, null, 2);
             } catch (error) {
                 document.getElementById('message').textContent = 'Error: ' + error.message;
