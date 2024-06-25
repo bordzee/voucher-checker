@@ -3,95 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omada Voucher Portal</title>
+    <title>Execute Omada API Requests</title>
 </head>
 <body>
-    <h1>Omada Voucher Login</h1>
+    <h1>Execute Omada API Requests</h1>
     <button id="executeButton">Execute Requests</button>
-    <div id="message"></div>
-    <pre id="debug"></pre>
+    <div id="debug"></div>
 
     <script>
-        function debug(message) {
-            const debugDiv = document.getElementById('debug');
-            debugDiv.textContent += message + "\n";
-        }
+        async function executeRequests() {
+            const debug = document.getElementById('debug');
+            debug.innerHTML = 'Starting login...<br>';
 
-        async function login() {
-            debug("Starting login...");
-            const response = await fetch('https://192.168.0.50:443/openapi/authorize/login?client_id=e9268e9afe6e49fb83a2140a14834a66&omadac_id=2b620cc1a125dfb76ddbad7be8299745', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: 'obordoreynel@gmail.com',
-                    password: 'Gofuckyourself123***'
-                })
-            });
-            const data = await response.json();
-            debug("Login successful: " + JSON.stringify(data));
-            return data.result;
-        }
+            const variables = {
+                OMADA_URL: 'https://192.168.0.50:443',
+                USERNAME: 'obordoreynel@gmail.com',
+                PASSWORD: 'Gofuckyourself123***',
+                CLIENT_ID: 'e9268e9afe6e49fb83a2140a14834a66',
+                CLIENT_SECRET: '1e62f55a982944fe85dd6fd71d17a0a2',
+                OMADA_ID: '2b620cc1a125dfb76ddbad7be8299745',
+                SITE_ID: '65571f8a7fb7c35166104d8b'
+            };
 
-        async function getAuthCode(csrfToken, sessionId) {
-            debug("Getting authorization code...");
-            const response = await fetch('https://192.168.0.50:443/openapi/authorize/code?client_id=e9268e9afe6e49fb83a2140a14834a66&omadac_id=2b620cc1a125dfb76ddbad7be8299745&response_type=code', {
-                method: 'POST',
-                headers: {
+            const loginUrl = `${variables.OMADA_URL}/openapi/authorize/login?client_id=${variables.CLIENT_ID}&omadac_id=${variables.OMADA_ID}`;
+            const loginBody = {
+                username: variables.USERNAME,
+                password: variables.PASSWORD
+            };
+
+            try {
+                const loginResponse = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginBody)
+                });
+                
+                if (!loginResponse.ok) throw new Error('Failed to login');
+                const loginData = await loginResponse.json();
+                const csrfToken = loginData.result.csrfToken;
+                const sessionId = loginData.result.sessionId;
+
+                debug.innerHTML += 'Login successful.<br>Starting authorization...<br>';
+
+                const authCodeUrl = `${variables.OMADA_URL}/openapi/authorize/code?client_id=${variables.CLIENT_ID}&omadac_id=${variables.OMADA_ID}&response_type=code`;
+                const authHeaders = {
                     'Content-Type': 'application/json',
                     'Csrf-Token': csrfToken,
-                    'Cookie': 'TPOMADA_SESSIONID=' + sessionId
-                }
-            });
-            const data = await response.json();
-            debug("Authorization code received: " + JSON.stringify(data));
-            return data.result;
-        }
+                    'Cookie': `TPOMADA_SESSIONID=${sessionId}`
+                };
 
-        async function getToken(authCode) {
-            debug("Getting access token...");
-            const response = await fetch('https://192.168.0.50:443/openapi/authorize/token?grant_type=authorization_code&code=' + authCode, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    client_id: 'e9268e9afe6e49fb83a2140a14834a66',
-                    client_secret: '1e62f55a982944fe85dd6fd71d17a0a2'
-                })
-            });
-            const data = await response.json();
-            debug("Access token received: " + JSON.stringify(data));
-            return data.result;
-        }
+                const authResponse = await fetch(authCodeUrl, {
+                    method: 'POST',
+                    headers: authHeaders
+                });
 
-        async function getVoucher(accessToken) {
-            debug("Getting voucher...");
-            const response = await fetch(`https://192.168.0.50:443/openapi/v1/2b620cc1a125dfb76ddbad7be8299745/sites/65571f8a7fb7c35166104d8b/hotspot/authed-records?page=1&pageSize=10&searchKey=813751`, {
-                method: 'GET',
-                headers: {
+                if (!authResponse.ok) throw new Error('Failed to obtain authorization code');
+                const authData = await authResponse.json();
+                const authCode = authData.result;
+
+                debug.innerHTML += 'Authorization successful.<br>Starting token request...<br>';
+
+                const tokenUrl = `${variables.OMADA_URL}/openapi/authorize/token?grant_type=authorization_code&code=${authCode}`;
+                const tokenBody = {
+                    client_id: variables.CLIENT_ID,
+                    client_secret: variables.CLIENT_SECRET
+                };
+
+                const tokenResponse = await fetch(tokenUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tokenBody)
+                });
+
+                if (!tokenResponse.ok) throw new Error('Failed to obtain access token');
+                const tokenData = await tokenResponse.json();
+                const accessToken = tokenData.result.accessToken;
+
+                debug.innerHTML += 'Token request successful.<br>Starting voucher request...<br>';
+
+                const vouchersUrl = `${variables.OMADA_URL}/openapi/v1/${variables.OMADA_ID}/sites/${variables.SITE_ID}/hotspot/authed-records?page=1&pageSize=10&searchKey=813751`;
+                const vouchersHeaders = {
                     'Content-Type': 'application/json',
-                    'Authorization': 'AccessToken=' + accessToken
-                }
-            });
-            const data = await response.json();
-            debug("Voucher data received: " + JSON.stringify(data));
-            return data;
+                    'Authorization': `AccessToken=${accessToken}`
+                };
+
+                const vouchersResponse = await fetch(vouchersUrl, {
+                    method: 'GET',
+                    headers: vouchersHeaders
+                });
+
+                if (!vouchersResponse.ok) throw new Error('Failed to get vouchers');
+                const vouchersData = await vouchersResponse.json();
+                
+                debug.innerHTML += 'Voucher request successful.<br>';
+                debug.innerHTML += `<pre>${JSON.stringify(vouchersData, null, 2)}</pre>`;
+
+            } catch (error) {
+                debug.innerHTML += `Error: ${error.message}<br>`;
+            }
         }
 
-        document.getElementById('executeButton').addEventListener('click', async function() {
-            try {
-                const loginResult = await login();
-                const authCode = await getAuthCode(loginResult.csrfToken, loginResult.sessionId);
-                const tokenResult = await getToken(authCode);
-                const voucherData = await getVoucher(tokenResult.accessToken);
-                document.getElementById('message').textContent = JSON.stringify(voucherData, null, 2);
-            } catch (error) {
-                document.getElementById('message').textContent = 'Error: ' + error.message;
-                debug("Error: " + error.message);
-            }
-        });
+        document.getElementById('executeButton').addEventListener('click', executeRequests);
     </script>
 </body>
 </html>
