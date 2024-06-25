@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Execute Omada API Requests</title>
+    <title>Execute Omada Login Request</title>
 </head>
 <body>
-    <h1>Execute Omada API Requests</h1>
-    <button id="executeButton">Execute Requests</button>
+    <h1>Execute Omada Login Request</h1>
+    <button id="executeButton">Execute Login</button>
     <div id="debug"></div>
 
     <script>
-        async function executeRequests() {
+        async function executeLogin() {
             const debug = document.getElementById('debug');
             debug.innerHTML = 'Starting login...<br>';
 
@@ -20,9 +20,7 @@
                 USERNAME: 'obordoreynel@gmail.com',
                 PASSWORD: 'Gofuckyourself123***',
                 CLIENT_ID: 'e9268e9afe6e49fb83a2140a14834a66',
-                CLIENT_SECRET: '1e62f55a982944fe85dd6fd71d17a0a2',
-                OMADA_ID: '2b620cc1a125dfb76ddbad7be8299745',
-                SITE_ID: '65571f8a7fb7c35166104d8b'
+                OMADA_ID: '2b620cc1a125dfb76ddbad7be8299745'
             };
 
             const loginUrl = `${variables.OMADA_URL}/openapi/authorize/login?client_id=${variables.CLIENT_ID}&omadac_id=${variables.OMADA_ID}`;
@@ -40,70 +38,16 @@
                 
                 if (!loginResponse.ok) throw new Error('Failed to login');
                 const loginData = await loginResponse.json();
-                const csrfToken = loginData.result.csrfToken;
-                const sessionId = loginData.result.sessionId;
 
-                debug.innerHTML += 'Login successful.<br>Starting authorization...<br>';
-
-                const authCodeUrl = `${variables.OMADA_URL}/openapi/authorize/code?client_id=${variables.CLIENT_ID}&omadac_id=${variables.OMADA_ID}&response_type=code`;
-                const authHeaders = {
-                    'Content-Type': 'application/json',
-                    'Csrf-Token': csrfToken,
-                    'Cookie': `TPOMADA_SESSIONID=${sessionId}`
-                };
-
-                const authResponse = await fetch(authCodeUrl, {
-                    method: 'POST',
-                    headers: authHeaders
-                });
-
-                if (!authResponse.ok) throw new Error('Failed to obtain authorization code');
-                const authData = await authResponse.json();
-                const authCode = authData.result;
-
-                debug.innerHTML += 'Authorization successful.<br>Starting token request...<br>';
-
-                const tokenUrl = `${variables.OMADA_URL}/openapi/authorize/token?grant_type=authorization_code&code=${authCode}`;
-                const tokenBody = {
-                    client_id: variables.CLIENT_ID,
-                    client_secret: variables.CLIENT_SECRET
-                };
-
-                const tokenResponse = await fetch(tokenUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(tokenBody)
-                });
-
-                if (!tokenResponse.ok) throw new Error('Failed to obtain access token');
-                const tokenData = await tokenResponse.json();
-                const accessToken = tokenData.result.accessToken;
-
-                debug.innerHTML += 'Token request successful.<br>Starting voucher request...<br>';
-
-                const vouchersUrl = `${variables.OMADA_URL}/openapi/v1/${variables.OMADA_ID}/sites/${variables.SITE_ID}/hotspot/authed-records?page=1&pageSize=10&searchKey=813751`;
-                const vouchersHeaders = {
-                    'Content-Type': 'application/json',
-                    'Authorization': `AccessToken=${accessToken}`
-                };
-
-                const vouchersResponse = await fetch(vouchersUrl, {
-                    method: 'GET',
-                    headers: vouchersHeaders
-                });
-
-                if (!vouchersResponse.ok) throw new Error('Failed to get vouchers');
-                const vouchersData = await vouchersResponse.json();
-                
-                debug.innerHTML += 'Voucher request successful.<br>';
-                debug.innerHTML += `<pre>${JSON.stringify(vouchersData, null, 2)}</pre>`;
+                debug.innerHTML += 'Login successful.<br>';
+                debug.innerHTML += `<pre>${JSON.stringify(loginData, null, 2)}</pre>`;
 
             } catch (error) {
                 debug.innerHTML += `Error: ${error.message}<br>`;
             }
         }
 
-        document.getElementById('executeButton').addEventListener('click', executeRequests);
+        document.getElementById('executeButton').addEventListener('click', executeLogin);
     </script>
 </body>
 </html>
