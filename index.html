@@ -66,9 +66,9 @@
             return data.result;
         }
 
-        async function getVoucher(accessToken, voucherCode) {
+        async function getVoucher(accessToken) {
             debug("Getting voucher...");
-            const response = await fetch(`https://192.168.0.50:443/openapi/v1/2b620cc1a125dfb76ddbad7be8299745/sites/65571f8a7fb7c35166104d8b/hotspot/authed-records?page=1&pageSize=10&searchKey=${voucherCode}`, {
+            const response = await fetch(`https://192.168.0.50:443/openapi/v1/2b620cc1a125dfb76ddbad7be8299745/sites/65571f8a7fb7c35166104d8b/hotspot/authed-records?page=1&pageSize=10&searchKey=813751`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -81,12 +81,11 @@
         }
 
         document.getElementById('executeButton').addEventListener('click', async function() {
-            const voucherCode = prompt("Enter the voucher code:");
             try {
                 const loginResult = await login();
                 const authCode = await getAuthCode(loginResult.csrfToken, loginResult.sessionId);
                 const tokenResult = await getToken(authCode);
-                const voucherData = await getVoucher(tokenResult.accessToken, voucherCode);
+                const voucherData = await getVoucher(tokenResult.accessToken);
                 document.getElementById('message').textContent = JSON.stringify(voucherData, null, 2);
             } catch (error) {
                 document.getElementById('message').textContent = 'Error: ' + error.message;
