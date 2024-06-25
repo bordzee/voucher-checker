@@ -36,7 +36,7 @@
                     body: JSON.stringify(loginBody)
                 });
                 
-                if (!loginResponse.ok) throw new Error('Failed to login');
+                if (!loginResponse.ok) throw new Error(`Failed to login: ${loginResponse.statusText} (status: ${loginResponse.status})`);
                 const loginData = await loginResponse.json();
 
                 debug.innerHTML += 'Login successful.<br>';
