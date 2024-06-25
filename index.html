@@ -3,51 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Execute Omada Login Request</title>
+    <title>Omada Login Test</title>
 </head>
 <body>
-    <h1>Execute Omada Login Request</h1>
-    <button id="executeButton">Execute Login</button>
-    <div id="debug"></div>
+    <h1>Omada Login Test</h1>
+    <button id="loginButton">Login</button>
+    <div id="response"></div>
 
     <script>
-        async function executeLogin() {
-            const debug = document.getElementById('debug');
-            debug.innerHTML = 'Starting login...<br>';
-
-            const variables = {
-                OMADA_URL: 'https://192.168.0.50:443',
-                USERNAME: 'obordoreynel@gmail.com',
-                PASSWORD: 'Gofuckyourself123***',
-                CLIENT_ID: 'e9268e9afe6e49fb83a2140a14834a66',
-                OMADA_ID: '2b620cc1a125dfb76ddbad7be8299745'
-            };
-
-            const loginUrl = `${variables.OMADA_URL}/openapi/authorize/login?client_id=${variables.CLIENT_ID}&omadac_id=${variables.OMADA_ID}`;
-            const loginBody = {
-                username: variables.USERNAME,
-                password: variables.PASSWORD
-            };
+        async function performLogin() {
+            const OMADA_URL = "https://192.168.0.50:443";
+            const USERNAME = "obordoreynel@gmail.com";
+            const PASSWORD = "Gofuckyourself123***";
+            const CLIENT_ID = "e9268e9afe6e49fb83a2140a14834a66";
+            const OMADA_ID = "2b620cc1a125dfb76ddbad7be8299745";
 
             try {
-                const loginResponse = await fetch(loginUrl, {
+                // Login and obtain CSRF token and session ID
+                let response = await fetch(`${OMADA_URL}/openapi/authorize/login?client_id=${CLIENT_ID}&omadac_id=${OMADA_ID}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(loginBody)
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: USERNAME,
+                        password: PASSWORD
+                    })
                 });
-                
-                if (!loginResponse.ok) throw new Error(`Failed to login: ${loginResponse.statusText} (status: ${loginResponse.status})`);
-                const loginData = await loginResponse.json();
 
-                debug.innerHTML += 'Login successful.<br>';
-                debug.innerHTML += `<pre>${JSON.stringify(loginData, null, 2)}</pre>`;
+                let data = await response.json();
+
+                // Display the login response
+                document.getElementById('response').innerText = JSON.stringify(data, null, 2);
+
+                if (data.result) {
+                    const CSRFTOKEN = data.result.csrfToken;
+                    const SESSIONID = data.result.sessionId;
+
+                    console.log(`Login successful! CSRF Token: ${CSRFTOKEN}, Session ID: ${SESSIONID}`);
+                } else {
+                    console.error('Login failed:', data);
+                }
 
             } catch (error) {
-                debug.innerHTML += `Error: ${error.message}<br>`;
+                console.error('Failed to login:', error);
+                document.getElementById('response').innerText = 'Failed to login: ' + error.message;
             }
         }
 
-        document.getElementById('executeButton').addEventListener('click', executeLogin);
+        document.getElementById('loginButton').addEventListener('click', function () {
+            performLogin();
+        });
     </script>
 </body>
 </html>
