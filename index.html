@@ -3,128 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voucher Remaining Time</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrapv4.min.css">
-    <link rel="stylesheet" type="text/css" href="css/cnty.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-        h1 {
-            color: #333;
-        }
-        .container {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .container p {
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .container input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .container button {
-            padding: 10px 20px;
-            border: none;
-            background-color: #007BFF;
-            color: #fff;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .container button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <title>Omada Voucher Portal</title>
 </head>
-<body class="light-blue lighten-1">
-  <div class="container halamanlogin">
-    <h1>Voucher Remaining Time</h1>
-    <div class="container">
-        <form id="voucherForm">
-            <label for="voucherCode">Enter Voucher Code:</label>
-            <input type="text" id="voucherCode" name="voucherCode" required>
-            <button type="submit">Submit</button>
-        </form>
-        <div id="voucher-info"></div>
-    </div>
-  </div>
+<body>
+    <h1>Omada Voucher Login</h1>
+    <form id="voucherForm">
+        <label for="voucher">Voucher Code:</label>
+        <input type="text" id="voucher" name="voucher" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="message"></div>
+    <pre id="debug"></pre>
 
-  <script src="js/jquery.js"></script>
-  <script src="js/bootstrapv4.min.js"></script>
-  <script>
-    $(document).ready(function() {
-        $('#voucherForm').on('submit', function(event) {
-            event.preventDefault();
-            
-            const voucherCode = $('#voucherCode').val();
-            const apiEndpoint = 'https://omadavoucherapi.p.rapidapi.com/';
-            
-            $.ajax({
-                url: apiEndpoint,
+    <script>
+        function debug(message) {
+            const debugDiv = document.getElementById('debug');
+            debugDiv.textContent += message + "\n";
+        }
+
+        async function login() {
+            debug("Starting login...");
+            const response = await fetch('https://192.168.0.50:443/openapi/authorize/login?client_id=e9268e9afe6e49fb83a2140a14834a66&omadac_id=2b620cc1a125dfb76ddbad7be8299745', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: 'obordoreynel@gmail.com',
+                    password: 'Gofuckyourself123***'
+                })
+            });
+            const data = await response.json();
+            debug("Login successful: " + JSON.stringify(data));
+            return data.result;
+        }
+
+        async function getAuthCode(csrfToken, sessionId) {
+            debug("Getting authorization code...");
+            const response = await fetch('https://192.168.0.50:443/openapi/authorize/code?client_id=e9268e9afe6e49fb83a2140a14834a66&omadac_id=2b620cc1a125dfb76ddbad7be8299745&response_type=code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-RapidAPI-Key': 'b03ddc1be3msh1801a5493740628p1b3f8djsnab25fa9b2f62',
-                    'X-RapidAPI-Host': 'omadavoucherapi.p.rapidapi.com'
-                },
-                data: JSON.stringify({ voucher: voucherCode }),
-                success: function(data) {
-                    const voucher = data.voucher;
-                    if (voucher) {
-                        const voucherInfo = `
-                            <p><strong>Voucher Code:</strong> ${voucher.code}</p>
-                            <p><strong>Remaining Time:</strong> ${voucher.remainingTime}</p>
-                        `;
-                        $('#voucher-info').html(voucherInfo);
-                        startTimer(voucher.remainingTime);
-                    } else {
-                        $('#voucher-info').html('<p>Invalid voucher code. Please try again.</p>');
-                    }
-                },
-                error: function(error) {
-                    console.error('Error fetching voucher data:', error);
-                    $('#voucher-info').html('<p>Error fetching voucher data. Please try again later.</p>');
+                    'Csrf-Token': csrfToken,
+                    'Cookie': 'TPOMADA_SESSIONID=' + sessionId
                 }
             });
-        });
-    });
+            const data = await response.json();
+            debug("Authorization code received: " + JSON.stringify(data));
+            return data.result;
+        }
 
-    let timerInterval;
+        async function getToken(authCode) {
+            debug("Getting access token...");
+            const response = await fetch('https://192.168.0.50:443/openapi/authorize/token?grant_type=authorization_code&code=' + authCode, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    client_id: 'e9268e9afe6e49fb83a2140a14834a66',
+                    client_secret: '1e62f55a982944fe85dd6fd71d17a0a2'
+                })
+            });
+            const data = await response.json();
+            debug("Access token received: " + JSON.stringify(data));
+            return data.result;
+        }
 
-    function startTimer(duration) {
-        let timer = duration, minutes, seconds;
-        clearInterval(timerInterval); // Clear any existing timer
-        timerInterval = setInterval(function () {
-            minutes = parseInt(timer / 60, 10);
-            seconds = parseInt(timer % 60, 10);
+        async function getVoucher(accessToken, voucherCode) {
+            debug("Getting voucher...");
+            const response = await fetch(`https://192.168.0.50:443/openapi/v1/2b620cc1a125dfb76ddbad7be8299745/sites/65571f8a7fb7c35166104d8b/hotspot/authed-records?page=1&pageSize=10&searchKey=${voucherCode}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'AccessToken=' + accessToken
+                }
+            });
+            const data = await response.json();
+            debug("Voucher data received: " + JSON.stringify(data));
+            return data;
+        }
 
-            minutes = minutes < 10 ? "0" + minutes : minutes;
-            seconds = seconds < 10 ? "0" + seconds : seconds;
-
-            $('#voucher-info').append(`<p>${minutes}:${seconds}</p>`);
-
-            if (--timer < 0) {
-                clearInterval(timerInterval);
-                $('#voucher-info').append(`<p>Voucher expired</p>`);
+        document.getElementById('voucherForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const voucher = document.getElementById('voucher').value;
+            try {
+                const loginResult = await login();
+                const authCode = await getAuthCode(loginResult.csrfToken, loginResult.sessionId);
+                const tokenResult = await getToken(authCode);
+                const voucherData = await getVoucher(tokenResult.accessToken, voucher);
+                document.getElementById('message').textContent = JSON.stringify(voucherData, null, 2);
+            } catch (error) {
+                document.getElementById('message').textContent = 'Error: ' + error.message;
+                debug("Error: " + error.message);
             }
-        }, 1000);
-    }
-  </script>
+        });
+    </script>
 </body>
 </html>
