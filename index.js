@@ -8,7 +8,11 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
+    res.send('Voucher Checker API is running');
+});
+
+app.get('/login', async (req, res) => {
     const OMADA_URL = "https://192.168.0.50:443";
     const USERNAME = "obordoreynel@gmail.com";
     const PASSWORD = "Gofuckyourself123***";
@@ -26,23 +30,12 @@ app.get('/', async (req, res) => {
             agent: new https.Agent({ rejectUnauthorized: false })
         });
         const data = await response.json();
-        
-        if (data.errorCode === 0) {
-            res.json({
-                message: "Login successful!",
-                data: data
-            });
-        } else {
-            res.json({
-                message: "Login failed!",
-                data: data
-            });
-        }
+        res.json(data);
     } catch (error) {
         res.status(500).send('Failed to login: ' + error.message);
     }
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://0.0.0.0:${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });

@@ -3,15 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
     "node-fetch": "^2.6.1",
+    "https": "^1.0.0",
     "cors": "^2.8.5"
   },
-  "description": ""
+  "devDependencies": {},
+  "description": "",
+  "author": "",
+  "license": "ISC"
 }
