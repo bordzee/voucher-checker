@@ -13,11 +13,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', async (req, res) => {
-    const OMADA_URL = process.env.OMADA_URL;
-    const USERNAME = process.env.USERNAME;
-    const PASSWORD = process.env.PASSWORD;
-    const CLIENT_ID = process.env.CLIENT_ID;
-    const OMADA_ID = process.env.OMADA_ID;
+    const OMADA_URL = "https://192.168.0.50:443";
+    const USERNAME = "obordoreynel@gmail.com";
+    const PASSWORD = "Gofuckyourself123***";
+    const CLIENT_ID = "e9268e9afe6e49fb83a2140a14834a66";
+    const OMADA_ID = "2b620cc1a125dfb76ddbad7be8299745";
 
     try {
         const response = await fetch(`${OMADA_URL}/openapi/authorize/login?client_id=${CLIENT_ID}&omadac_id=${OMADA_ID}`, {
