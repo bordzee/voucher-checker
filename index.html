@@ -3,56 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omada Login Test</title>
+    <title>Omada Voucher Portal</title>
 </head>
 <body>
-    <h1>Omada Login Test</h1>
-    <button id="loginButton">Login</button>
-    <div id="response"></div>
+    <h1>Omada Voucher Login</h1>
+    <form id="voucherForm">
+        <label for="voucher">Voucher Code:</label>
+        <input type="text" id="voucher" name="voucher" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="message"></div>
 
     <script>
-        async function performLogin() {
-            const OMADA_URL = "http://192.168.0.50:443";  // Use http instead of https if SSL is disabled
+        async function login() {
+            const OMADA_URL = "https://192.168.0.50:443";
             const USERNAME = "obordoreynel@gmail.com";
             const PASSWORD = "Gofuckyourself123***";
             const CLIENT_ID = "e9268e9afe6e49fb83a2140a14834a66";
             const OMADA_ID = "2b620cc1a125dfb76ddbad7be8299745";
 
             try {
-                // Login and obtain CSRF token and session ID
-                let response = await fetch(`${OMADA_URL}/openapi/authorize/login?client_id=${CLIENT_ID}&omadac_id=${OMADA_ID}`, {
+                const response = await fetch(`${OMADA_URL}/openapi/authorize/login?client_id=${CLIENT_ID}&omadac_id=${OMADA_ID}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({
                         username: USERNAME,
                         password: PASSWORD
-                    })
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
                 });
-
-                let data = await response.json();
-
-                // Display the login response
-                document.getElementById('response').innerText = JSON.stringify(data, null, 2);
-
-                if (data.result) {
-                    const CSRFTOKEN = data.result.csrfToken;
-                    const SESSIONID = data.result.sessionId;
-
-                    console.log(`Login successful! CSRF Token: ${CSRFTOKEN}, Session ID: ${SESSIONID}`);
+                const data = await response.json();
+                if (data.errorCode === 0) {
+                    return data.result;
                 } else {
-                    console.error('Login failed:', data);
+                    throw new Error(data.msg);
                 }
-
             } catch (error) {
-                console.error('Failed to login:', error);
-                document.getElementById('response').innerText = 'Failed to login: ' + error.message;
+                throw new Error('Failed to login: ' + error.message);
             }
         }
 
-        document.getElementById('loginButton').addEventListener('click', function () {
-            performLogin();
+        async function getAuthCode(csrfToken, sessionId) {
+            const OMADA_URL = "https://192.168.0.50:443";
+            const CLIENT_ID = "e9268e9afe6e49fb83a2140a14834a66";
+            const OMADA_ID = "2b620cc1a125dfb76ddbad7be8299745";
+
+            try {
+                const response = await fetch(`${OMADA_URL}/openapi/authorize/code?client_id=${CLIENT_ID}&omadac_id=${OMADA_ID}&response_type=code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Csrf-Token': csrfToken,
+                        'Cookie': `TPOMADA_SESSIONID=${sessionId}`
+                    }
+                });
+                const data = await response.json();
+                return data.result;
+            } catch (error) {
+                throw new Error('Failed to get auth code: ' + error.message);
+            }
+        }
+
+        async function getToken(authCode) {
+            const OMADA_URL = "https://192.168.0.50:443";
+            const CLIENT_ID = "e9268e9afe6e49fb83a2140a14834a66";
+            const CLIENT_SECRET = "1e62f55a982944fe85dd6fd71d17a0a2";
+
+            try {
+                const response = await fetch(`${OMADA_URL}/openapi/authorize/token?grant_type=authorization_code&code=${authCode}`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        client_id: CLIENT_ID,
+                        client_secret: CLIENT_SECRET
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                return data.result.accessToken;
+            } catch (error) {
+                throw new Error('Failed to get token: ' + error.message);
+            }
+        }
+
+        async function getVoucher(accessToken, voucherCode) {
+            const OMADA_URL = "https://192.168.0.50:443";
+            const OMADA_ID = "2b620cc1a125dfb76ddbad7be8299745";
+            const SITE_ID = "65571f8a7fb7c35166104d8b";
+
+            try {
+                const response = await fetch(`${OMADA_URL}/openapi/v1/${OMADA_ID}/sites/${SITE_ID}/hotspot/authed-records?page=1&pageSize=10&searchKey=${voucherCode}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `AccessToken=${accessToken}`
+                    }
+                });
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                throw new Error('Failed to get voucher: ' + error.message);
+            }
+        }
+
+        document.getElementById('voucherForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const voucher = document.getElementById('voucher').value;
+            const messageDiv = document.getElementById('message');
+
+            try {
+                const loginResult = await login();
+                const authCode = await getAuthCode(loginResult.csrfToken, loginResult.sessionId);
+                const accessToken = await getToken(authCode);
+                const voucherData = await getVoucher(accessToken, voucher);
+                messageDiv.textContent = JSON.stringify(voucherData, null, 2);
+            } catch (error) {
+                messageDiv.textContent = error.message;
+            }
         });
     </script>
 </body>
