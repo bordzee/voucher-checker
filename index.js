@@ -1,42 +1,46 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const https = require('https');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
-app.use(cors());
+app.use(cors()); // Enable CORS
 
 app.get('/', (req, res) => {
     res.send('Voucher Checker API is running');
 });
 
-app.post('/login', async (req, res) => {
+app.get('/login', async (req, res) => {
     const OMADA_URL = "https://192.168.0.50:443";
-    const { username, password, clientId, omadaId } = req.body;
-    
+    const USERNAME = "obordoreynel@gmail.com";
+    const PASSWORD = "Gofuckyourself123***";
+    const CLIENT_ID = "e9268e9afe6e49fb83a2140a14834a66";
+    const OMADA_ID = "2b620cc1a125dfb76ddbad7be8299745";
+
     try {
-        const response = await fetch(`${OMADA_URL}/openapi/authorize/login?client_id=${clientId}&omadac_id=${omadaId}`, {
+        const response = await fetch(`${OMADA_URL}/openapi/authorize/login?client_id=${CLIENT_ID}&omadac_id=${OMADA_ID}`, {
             method: 'POST',
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({
+                username: USERNAME,
+                password: PASSWORD
+            }),
             headers: { 'Content-Type': 'application/json' },
-            agent: new https.Agent({ rejectUnauthorized: false })
+            agent: new https.Agent({ rejectUnauthorized: false }) // Ignore SSL warnings
         });
 
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         res.json(data);
     } catch (error) {
-        res.status(500).send('Failed to login: ' + error.message);
+        res.status(500).json({ info: 'Failed to login', error: error.message });
     }
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server running at http://0.0.0.0:${port}`);
 });
