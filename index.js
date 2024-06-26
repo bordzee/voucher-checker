@@ -29,7 +29,16 @@ app.get('/login', async (req, res) => {
             headers: { 'Content-Type': 'application/json' },
             agent: new https.Agent({ rejectUnauthorized: false })
         });
-        const data = await response.json();
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            res.status(500).send(`Failed to login: ${text}`);
+            return;
+        }
+
         res.json(data);
     } catch (error) {
         res.status(500).send('Failed to login: ' + error.message);

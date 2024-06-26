@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omada Voucher Portal</title>
+    <title>Omada Voucher Login</title>
 </head>
 <body>
     <h1>Omada Voucher Login</h1>
     <div id="message"></div>
 
     <script>
-        async function login() {
+        window.onload = async function() {
+            const messageDiv = document.getElementById('message');
             try {
-                const response = await fetch('https://voucher-checker.vercel.app/login', {
-                    method: 'GET'
-                });
-                const result = await response.json();
-                const messageDiv = document.getElementById('message');
-                if (result.errorCode === 0) {
-                    messageDiv.textContent = 'Login Successful!';
-                } else {
-                    messageDiv.textContent = 'Login Failed: ' + result.msg;
+                const response = await fetch('https://voucher-checker.vercel.app/login');
+                const text = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                    if (result.errorCode === 0) {
+                        messageDiv.textContent = 'Login successful: ' + JSON.stringify(result.result);
+                    } else {
+                        messageDiv.textContent = 'Login failed: ' + result.msg;
+                    }
+                } catch (e) {
+                    messageDiv.textContent = 'Login failed: ' + text;
                 }
             } catch (error) {
-                document.getElementById('message').textContent = 'Failed to login: ' + error.message;
+                messageDiv.textContent = 'Failed to login: ' + error.message;
             }
-        }
-
-        // Execute login on page load
-        window.onload = login;
+        };
     </script>
 </body>
 </html>
