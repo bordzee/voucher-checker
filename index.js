@@ -6,7 +6,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors()); // Enable CORS
+app.use(cors());
 
 app.get('/', (req, res) => {
     res.send('Voucher Checker API is running');
@@ -27,17 +27,23 @@ app.get('/login', async (req, res) => {
                 password: PASSWORD
             }),
             headers: { 'Content-Type': 'application/json' },
-            agent: new https.Agent({ rejectUnauthorized: false }) // Ignore SSL warnings
+            agent: new https.Agent({ rejectUnauthorized: false })
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         const data = await response.json();
-        res.json(data);
+        
+        if (data.errorCode === 0) {
+            res.json({
+                message: "Login successful!",
+                data: data
+            });
+        } else {
+            res.json({
+                message: "Login failed!",
+                data: data
+            });
+        }
     } catch (error) {
-        res.status(500).json({ info: 'Failed to login', error: error.message });
+        res.status(500).send('Failed to login: ' + error.message);
     }
 });
 
