@@ -8,11 +8,7 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 
-app.get('/', (req, res) => {
-    res.send('Voucher Checker API is running');
-});
-
-app.get('/login', async (req, res) => {
+app.get('/', async (req, res) => {
     const OMADA_URL = "https://192.168.0.50:443";
     const USERNAME = "obordoreynel@gmail.com";
     const PASSWORD = "Gofuckyourself123***";
